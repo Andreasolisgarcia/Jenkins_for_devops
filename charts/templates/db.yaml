@@ -5,46 +5,48 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: movie-db # has to match .spec.template.metadata.labels
-  serviceName: movie-db
+        name: {{ include "fastapiapp.fullname" . }}-db
+  labels: 
+    {{- include "fastapiapp.dbLabels" . | nindent 4 }}
+  serviceName: {{ .Release.Name }}-db
   template:
     metadata:
       labels:
-        app: movie-db # has to match .spec.selector.matchLabels
+        {{- include "fastapiapp.dbLabels" . | nindent 4 }}
     spec:
       terminationGracePeriodSeconds: 10
       containers:
-      - name: movie-postgres
-        image: postgres:12.1-alpine
+      - name: {{ .Release.Name }}-postgres
+        image: {{ .Values.db.image }}
         ports:
           - containerPort: 5432
         env: 
           - name: POSTGRES_USER
             valueFrom: 
               configMapKeyRef:
-                name: movie-db-config
+                name: {{ printf "%s-db-configmap" .Release.Name | quote }}
                 key: POSTGRES_USER
           - name: POSTGRES_DB
             valueFrom:
               configMapKeyRef:
-                name: movie-db-config
+                name: {{ printf "%s-db-configmap" .Release.Name | quote }}
                 key: POSTGRES_DB
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: movie-db-secret
+                name: {{ printf "%s-db-secret" .Release.Name | quote }}
                 key: POSTGRES_PASSWORD
         volumeMounts:
-          - name: volume-movie-db
-            mountPath: /var/lib/postgresql/data/
+          - name: volume-{{ .Release.Name }}-db
+            mountPath: {{ .Values.db.mountPath }}
   volumeClaimTemplates:
     - metadata:
-        name: volume-movie-db
+        name: volume-{{ .Release.Name }}-db
       spec:
         accessModes: ["ReadWriteOnce"] 
         resources: 
           requests:
-            storage: 1G
+            storage: {{ .Values.db.storage }}
 
 
 

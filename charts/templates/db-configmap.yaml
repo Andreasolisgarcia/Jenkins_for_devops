@@ -1,7 +1,8 @@
 apiVersion: v1
 data:
-  POSTGRES_DB: movie_db_dev
-  POSTGRES_USER: movie_db_username
+  POSTGRES_DB: {{ .Values.ConfigMap.POSTGRES_DB }}
+  POSTGRES_USER: {{ .Values.ConfigMap.POSTGRES_USER }}
 kind: ConfigMap
 metadata:
-  name: movie-db-config # doit matcher le configMapKeyRef.name de db.yaml
+  name: {{ printf "%s-db-configmap" .Release.Name | quote }}
+  # doit matcher le configMapKeyRef.name de db.yaml
