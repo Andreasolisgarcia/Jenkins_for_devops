@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-service-db 
+  labels:
+    app: movie-service-db 
+spec:
+  ports:
+  - targetPort: 5432
+    port: 5432
+  selector:
+    app: movie-db
