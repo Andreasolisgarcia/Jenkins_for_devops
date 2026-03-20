@@ -7,6 +7,7 @@
 image:
   repository: reasg/jenkins_for_devops_cast_service
   tag: latest
+  pullPolicy: IfNotPresent
 
 # Deployment environment variables
 env:
