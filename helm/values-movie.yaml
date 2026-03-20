@@ -11,11 +11,13 @@ image:
 # Deployment environment variables
 env:
   containerPort: 8000
+  # Must match service.name in values-cast.yaml
   # Run 'kubectl get svc -n dev' to verify the exact service name
   castServiceName: "cast-service-svc"
 
 # Microservice Kubernetes Service
 service:
+  name: ""
   type: NodePort
   port: 80
   nodePort: 30007
@@ -33,13 +35,18 @@ configMap:
   POSTGRES_USER: movie_db_username
 
 # Secrets — never committed to Git
+#
 # Option 1 — local file (recommended):
-#   Create values-secret.yaml and add to .gitignore
-#   helm install movie-service ./charts \
-#     -f values-movies.yaml \
-#     -f values-secret.yaml
+#   Create values-movie-secret.yaml and add to .gitignore:
+#
+#   secret:
+#     POSTGRES_PASSWORD: yourpassword
+#
+#   helm install movies-service ./helm/charts \
+#     -f ./helm/values-movie.yaml \
+#     -f ./helm/values-movie-secret.yaml
 #
 # Option 2 — CLI (CI/CD pipelines):
-#   helm install movie-service ./charts \
-#     -f ./charts/values-movies.yaml \
+#   helm install movies-service ./helm/charts \
+#     -f ./helm/values-movie.yaml \
 #     --set secret.POSTGRES_PASSWORD=yourpassword
