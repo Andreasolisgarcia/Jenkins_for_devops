@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: movie-service-db 
+  name: {{ .Release.Name }}-db-svc 
   labels:
-    app: movie-service-db 
+    {{- include "fastapiapp.selectorLabels" . | nindent 4 }}
+    component: database
 spec:
   ports:
   - targetPort: 5432
     port: 5432
   selector:
-    app: movie-db
+    {{- include "fastapiapp.dbLabels" . | nindent 4 }}

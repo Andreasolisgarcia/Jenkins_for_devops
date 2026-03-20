@@ -1,18 +1,20 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name:  movie-service-db
+  name: {{ include "fastapiapp.fullname" . }}-db
+  labels: 
+    {{- include "fastapiapp.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-        name: {{ include "fastapiapp.fullname" . }}-db
-  labels: 
-    {{- include "fastapiapp.dbLabels" . | nindent 4 }}
+        {{- include "fastapiapp.dbLabels" . | nindent 6 }}     
+         # has to match .spec.template.metadata.labels
   serviceName: {{ .Release.Name }}-db
   template:
     metadata:
       labels:
-        {{- include "fastapiapp.dbLabels" . | nindent 4 }}
+        {{- include "fastapiapp.dbLabels" . | nindent 8 }}
+            # has to match .spec.selector.matchLabels
     spec:
       terminationGracePeriodSeconds: 10
       containers:

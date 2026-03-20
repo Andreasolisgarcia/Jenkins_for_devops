@@ -1,61 +1,30 @@
+# ============================================
+# values-movies.yaml
+# Configuration du microservice movie-service
+# ============================================
 
+# Image Docker du microservice
+image:
+  repository: reasg/jenkins_for_devops_movie_service
+  tag: latest
+
+# Configuration PostgreSQL
 db:
   image: postgres:12.1-alpine
   mountPath: /var/lib/postgresql/data/
-  storage: 1G
+  storage: 1G  # Augmenter en prod (ex: 50G)
 
-
+# Variables ConfigMap (non sensibles)
 configMap:
   POSTGRES_DB: movie_db_dev
   POSTGRES_USER: movie_db_username
 
-  
+# Variables d'environnement
+env:
+  containerPort: 8000
+  castServiceName: "cast-service-fastapiapp"  # kubectl get svc -n dev pour vérifier
 
 
-# apiVersion: apps/v1
-# kind: StatefulSet
-# metadata:
-#   name:  movie-service-db
-# spec:
-#   selector:
-#     matchLabels:
-#       app: movie-db # has to match .spec.template.metadata.labels
-#   serviceName: movie-db
-#   template:
-#     metadata:
-#       labels:
-#         app: movie-db # has to match .spec.selector.matchLabels
-#     spec:
-#       terminationGracePeriodSeconds: 10
-#       containers:
-#       - name: movie-postgres
-#         image: postgres:12.1-alpine
-#         ports:
-#           - containerPort: 5432
-#         env: 
-#           - name: POSTGRES_USER
-#             valueFrom: 
-#               configMapKeyRef:
-#                 name: movie-db-config
-#                 key: POSTGRES_USER
-#           - name: POSTGRES_DB
-#             valueFrom:
-#               configMapKeyRef:
-#                 name: movie-db-config
-#                 key: POSTGRES_DB
-#           - name: POSTGRES_PASSWORD
-#             valueFrom:
-#               secretKeyRef:
-#                 name: movie-db-secret
-#                 key: POSTGRES_PASSWORD
-#         volumeMounts:
-#           - name: volume-movie-db
-#             mountPath: /var/lib/postgresql/data/
-#   volumeClaimTemplates:
-#     - metadata:
-#         name: volume-movie-db
-#       spec:
-#         accessModes: ["ReadWriteOnce"] 
-#         resources: 
-#           requests:
-#             storage: 1G
+# Secret (voir values-secret.yaml — jamais committé)
+# secret:
+#   POSTGRES_PASSWORD: ???

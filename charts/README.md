@@ -27,3 +27,22 @@ $ tree
 ```
 
 Now you can edit Chart.yaml and modify appVersion and chart version. You can edit values.yaml and provide image registry, name and tag and whatever you want.
+
+
+## Gestion des secrets
+
+Les mots de passe ne sont jamais commités dans le repo.
+
+Créer un fichier `values-secret.yaml` localement (non versionné) :
+\```yaml
+secret:
+  POSTGRES_PASSWORD: votre_password
+\```
+
+En production, utiliser HashiCorp Vault ou AWS Secrets Manager
+pour injecter les secrets via le pipeline Jenkins.
+\```bash
+helm install movie-service ./charts \
+  -f ./charts/values-movies.yaml \
+  -f values-secret.yaml
+\```
