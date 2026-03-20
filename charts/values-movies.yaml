@@ -22,7 +22,9 @@ configMap:
 # Variables d'environnement
 env:
   containerPort: 8000
-  castServiceName: "cast-service-fastapiapp"  # kubectl get svc -n dev pour vérifier
+  # kubectl get svc -n dev pour vérifier
+  castServiceName: "cast-service-svc" 
+   
 
 
 # Secret (voir values-secret.yaml — jamais committé)
