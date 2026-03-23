@@ -19,10 +19,7 @@ env:
 # Microservice Kubernetes Service
 service:
   name: ""
-  type: NodePort
-  port: 80
   nodePort: 30007
-  targetPort: 8000
 
 # PostgreSQL configuration
 db:
@@ -35,19 +32,3 @@ configMap:
   POSTGRES_DB: movie_db_dev
   POSTGRES_USER: movie_db_username
 
-# Secrets — never committed to Git
-#
-# Option 1 — local file (recommended):
-#   Create values-movie-secret.yaml and add to .gitignore:
-#
-#   secret:
-#     POSTGRES_PASSWORD: yourpassword
-#
-#   helm install movies-service ./helm/charts \
-#     -f ./helm/values-movie.yaml \
-#     -f ./helm/values-movie-secret.yaml
-#
-# Option 2 — CLI (CI/CD pipelines):
-#   helm install movies-service ./helm/charts \
-#     -f ./helm/values-movie.yaml \
-#     --set secret.POSTGRES_PASSWORD=yourpassword

@@ -5,15 +5,22 @@
 replicaCount: 3
 
 
-imagePullSecrets: 
-  - name: "regcred"
+imagePullSecrets: []
+#no use for secret regcred, public repo
+#  - name: "regcred"
 nameOverride: ""
 fullnameOverride: ""
 
 
+service:
+  port: 80
+  targetPort: 8000
+  type: NodePort
+
+
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
+  create: false
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.

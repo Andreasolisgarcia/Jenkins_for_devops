@@ -18,10 +18,7 @@ env:
 service:
   # this name must match castServiceName in values-movie.yaml
   name: "cast-service-svc"   
-  type: NodePort
-  port: 80
   nodePort: 30008
-  targetPort: 8000
 
 db:
   image: postgres:12.1-alpine
@@ -34,19 +31,3 @@ configMap:
   POSTGRES_USER: cast_db_username
 
 
-# Secrets — never committed to Git
-#
-# Option 1 — local file (recommended):
-#   Create values-cast-secret.yaml and add to .gitignore:
-#
-#   secret:
-#     POSTGRES_PASSWORD: yourpassword
-#
-#   helm install cast-service ./helm/charts \
-#     -f ./helm/values-cast.yaml \
-#     -f ./helm/values-cast-secret.yaml
-#
-# Option 2 — CLI (CI/CD pipelines):
-#   helm install cast-service ./helm/charts \
-#     -f ./helm/values-cast.yaml \
-#     --set secret.POSTGRES_PASSWORD=yourpassword
