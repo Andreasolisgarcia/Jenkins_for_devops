@@ -17,3 +17,8 @@ See values-secret.yaml (gitignored) or pass via CLI:
   --set secret.POSTGRES_PASSWORD=yourpassword
 
 In production: use AWS Secrets Manager or HashiCorp Vault.
+
+preparation jenkins
+docker credentials
+k3s
+cat /etc/rancher/k3s/k3s.yaml

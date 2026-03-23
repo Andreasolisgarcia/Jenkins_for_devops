@@ -213,5 +213,5 @@ Images disponibles sur : https://hub.docker.com/repositories/reasg
 
 | Image | Tag |
 |---|---|
-| reasg/movie-service | latest |
-| reasg/cast-service | latest |
+| reasg/jenkins_for_devops_movie_service | latest |
+| reasg/jenkins_for_devops_cast_service | latest |
