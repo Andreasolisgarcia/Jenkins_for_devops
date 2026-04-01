@@ -1,6 +1,6 @@
 # ============================================
 # values-cast.yaml
-# Configuration for the movie-service microservice
+# Configuration for the cast-service microservice
 # ============================================
 
 # Docker image
