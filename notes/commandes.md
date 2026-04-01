@@ -63,3 +63,16 @@ helm install movie-service ./helm/charts \
 
   sudo crictl rmi reasg/jenkins_for_devops_cast_service:latest
   sudo crictl rmi reasg/jenkins_for_devops_movie_service:latest
+
+  git diff --name-only HEAD~1 HEAD
+
+
+  #jenkins ches git repo
+  checkout scm
+  Jenkins executes commandes with
+  sh
+
+##tests 
+
+kubectl delete pod <release>-fastapiapp-test-connection -n <namespace>
+helm test <release> -n <namespace> --logs

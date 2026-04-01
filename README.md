@@ -154,8 +154,7 @@ kubectl apply -f k8s/ingress.yaml -n dev
 
 ```bash
 # movie-service
-helm install movie-service ./helm/charts \
-  -f helm/values.yaml \
+helm install movie-service ./helm/charts \                                                      
   -f helm/values-movie.yaml \
   -f helm/values-movie-secret.yaml \
   -f helm/values-staging-prod.yaml \
