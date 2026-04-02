@@ -281,8 +281,8 @@ pipeline {
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
                     retry(2) {
                         sh "sleep 15"
-                        sh "curl -f http://${publicIP}/api/v1/movies"
-                        sh "curl -f http://${publicIP}/api/v1/casts"
+                        sh "curl -fL http://${publicIP}/api/v1/movies"
+                        sh "curl -fL http://${publicIP}/api/v1/casts"
                     }
                 }
             }
@@ -368,8 +368,8 @@ pipeline {
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
                     retry(2) {
                         sh "sleep 15"
-                        sh "curl -f http://${publicIP}/api/v1/movies"
-                        sh "curl -f http://${publicIP}/api/v1/casts"
+                        sh "curl -fL http://${publicIP}/api/v1/movies"
+                        sh "curl -fL http://${publicIP}/api/v1/casts"
                     }
                 }
             }
