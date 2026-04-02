@@ -17,6 +17,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: cast-service-fastapiapp
+                name: cast-service-svc
                 port:
                   number: 80
