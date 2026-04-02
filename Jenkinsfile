@@ -137,7 +137,7 @@ pipeline {
                         sh "sleep 10"
                         retry(2) {
                             sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -146,7 +146,7 @@ pipeline {
                         sh "sleep 10"
                         retry(2) {
                             sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -209,19 +209,19 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
                         retry(2) {
+                            sh "sleep 10"
                             sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
                         retry(2) {
+                            sh "sleep 10"
                             sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -283,19 +283,19 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
                         retry(2) {
+                            sh "sleep 10"
                             sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
                         retry(2) {
+                            sh "sleep 10"
                             sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -315,8 +315,8 @@ pipeline {
             steps {
                 script {
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
-                    sh "sleep 15"
                     retry(2) {
+                        sh "sleep 15"
                         sh "curl -f http://${publicIP}/api/v1/movies"
                         sh "curl -f http://${publicIP}/api/v1/casts"
                     }
@@ -386,19 +386,19 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
                         retry(2) {
+                            sh "sleep 10"
                             sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
                         retry(2) {
+                            sh "sleep 10"
                             sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
                         }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -418,8 +418,8 @@ pipeline {
             steps {
                 script {
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
-                    sh "sleep 15"
                     retry(2) {
+                        sh "sleep 15"
                         sh "curl -f http://${publicIP}/api/v1/movies"
                         sh "curl -f http://${publicIP}/api/v1/casts"
                     }
