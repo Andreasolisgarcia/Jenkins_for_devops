@@ -6,6 +6,8 @@ pipeline {
         BUILD_CAST = 'false'
         DEPLOY_MOVIE = 'false'
         DEPLOY_CAST  = 'false'
+        MOVIE_RELEASE = 'movie-service'
+        CAST_RELEASE = 'cast-service'
     }
 
     
@@ -33,7 +35,7 @@ pipeline {
                     if (changes.contains('helm/')) {
                         env.DEPLOY_MOVIE = 'true'
                         env.DEPLOY_CAST = 'true'
-                    }                           
+                    }                       
                 }
             }
         }
@@ -67,6 +69,9 @@ pipeline {
             }
         }
         stage('Deploy dev'){
+            environment {
+                NAMESPACE = 'dev'
+            }
             when {
                 allOf{
                     branch 'dev'
@@ -84,17 +89,15 @@ pipeline {
                         script{
                             if (env.DEPLOY_MOVIE == 'true'){
                                 sh "helm upgrade --install movie-service ./helm/charts \
-                                    -f ./helm/values.yaml \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
-                                    -n dev"                        
+                                    -n ${NAMESPACE}"                        
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
-                                  -f ./helm/values.yaml \
                                   -f ./helm/values-cast.yaml \
                                   -f ${CAST_SECRET} \
-                                  -n dev"                       
+                                  -n ${NAMESPACE}"                       
                             }                    
                         } 
                     }
@@ -102,18 +105,39 @@ pipeline {
             }
         }
         stage('Test dev') {
+            environment {
+                NAMESPACE = 'dev'
+            }
+            when {
+                allOf{
+                    branch 'dev'
+                    anyOf{
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
             steps {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
-                        sh 'helm test movie-service -n dev'
+                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
-                       sh 'helm test cast-service -n dev'
+                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                 }
-        }
+            }
         }
         stage('Deploy qa'){
+            environment {
+                NAMESPACE = 'qa'
+            }
             when {
                 allOf{
                     branch 'dev'
@@ -131,22 +155,231 @@ pipeline {
                         script{
                             if (env.DEPLOY_MOVIE == 'true'){
                                 sh "helm upgrade --install movie-service ./helm/charts \
-                                    -f ./helm/values.yaml \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
-                                    -n qa"                            
+                                    -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
-                                  -f ./helm/values.yaml \
-                                  -f ./helm/values-cast.yaml \
-                                  -f ${CAST_SECRET} \
-                                  -n qa"                          
+                                    -f ./helm/values-cast.yaml \
+                                    -f ${CAST_SECRET} \
+                                    -n ${NAMESPACE}"                          
                             }                    
                         } 
                     }
-
             }            
         }
-    }
+        stage('Test qa') {
+            environment {
+                NAMESPACE = 'qa'
+            }
+            when {
+                allOf{
+                    branch 'dev'
+                    anyOf{
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps {
+                script {
+                    if (env.DEPLOY_MOVIE == 'true') {
+                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                    }
+                    if (env.DEPLOY_CAST == 'true') {
+                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                    }
+                }
+            }
+        }
+        stage('Deploy staging'){
+            environment {
+                NAMESPACE = 'staging'
+            }
+            when {
+                allOf {
+                    branch 'dev'
+                    anyOf {
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps{
+                withCredentials([
+                    file(credentialsId: 'values-movie-secret', variable: 'MOVIE_SECRET'),
+                    file(credentialsId: 'values-cast-secret', variable: 'CAST_SECRET')
+                    ]){
+                        script{
+                            if (env.DEPLOY_MOVIE == 'true'){
+                                sh "helm upgrade --install movie-service ./helm/charts \
+                                    -f ./helm/values-movie.yaml \
+                                    -f ./helm/values-staging-prod.yaml \
+                                    -f ${MOVIE_SECRET} \
+                                    -n ${NAMESPACE}"                            
+                            }
+                            if (env.DEPLOY_CAST == 'true'){
+                                sh "helm upgrade --install cast-service ./helm/charts \
+                                -f ./helm/values-cast.yaml \
+                                    -f ./helm/values-staging-prod.yaml \
+                                    -f ${CAST_SECRET} \
+                                    -n ${NAMESPACE}"                          
+                            } 
+                            sh "kubectl apply -f ./kubernetes/ingress.yaml -n ${NAMESPACE}"                   
+                        } 
+                    }
+            }
+        }
+        stage('Test staging (helm test - intern )') {
+            environment {
+                NAMESPACE = 'staging'
+            }
+            when {
+                allOf{
+                    branch 'dev'
+                    anyOf{
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps {
+                script {
+                    if (env.DEPLOY_MOVIE == 'true') {
+                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                    }
+                    if (env.DEPLOY_CAST == 'true') {
+                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                    }
+
+                }
+            }
+        }
+        stage('Test staging Ingress (curl extern)'){
+            when {
+                allOf{
+                    branch 'dev'
+                    anyOf{
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps {
+                script {
+                    def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
+                    sh "curl -f http://${publicIP}/api/v1/movies"
+                    sh "curl -f http://${publicIP}/api/v1/casts"
+                }
+            }
+        }
+        stage('Sanity Check'){
+            when {
+                branch 'master'
+            }
+            steps {
+                input "Does the staging environment look ok? Do you want to continue DEPLOYING to PROD?"
+            }
+        }
+        stage('Deploy prod'){
+            environment {
+                NAMESPACE = 'prod'
+            }
+            when {
+                allOf {
+                    branch 'master'
+                    anyOf {
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps{
+                withCredentials([
+                    file(credentialsId: 'values-movie-secret', variable: 'MOVIE_SECRET'),
+                    file(credentialsId: 'values-cast-secret', variable: 'CAST_SECRET')
+                    ]){
+                        script{
+                            if (env.DEPLOY_MOVIE == 'true'){
+                                sh "helm upgrade --install movie-service ./helm/charts \
+                                    -f ./helm/values-movie.yaml \
+                                    -f ./helm/values-staging-prod.yaml \
+                                    -f ${MOVIE_SECRET} \
+                                    -n ${NAMESPACE}"                            
+                            }
+                            if (env.DEPLOY_CAST == 'true'){
+                                sh "helm upgrade --install cast-service ./helm/charts \
+                                -f ./helm/values-cast.yaml \
+                                    -f ./helm/values-staging-prod.yaml \
+                                    -f ${CAST_SECRET} \
+                                    -n ${NAMESPACE}"                          
+                            } 
+                            sh "kubectl apply -f ./kubernetes/ingress.yaml -n ${NAMESPACE}"                   
+                        } 
+                    }
+            }
+        }
+        stage('Test prod (helm test - intern )') {
+            environment {
+                NAMESPACE = 'prod'
+            }
+            when {
+                allOf{
+                    branch 'master'
+                    anyOf{
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps {
+                script {
+                    if (env.DEPLOY_MOVIE == 'true') {
+                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                    }
+                    if (env.DEPLOY_CAST == 'true') {
+                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                    }
+
+                }
+            }
+        }
+        stage('Test prod Ingress (curl extern)'){
+            when {
+                allOf{
+                    branch 'master'
+                    anyOf{
+                        environment name: 'DEPLOY_MOVIE', value: 'true'
+                        environment name: 'DEPLOY_CAST', value: 'true'
+                    }
+                }
+            }
+            steps {
+                script {
+                    def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
+                    sh "curl -f http://${publicIP}/api/v1/movies"
+                    sh "curl -f http://${publicIP}/api/v1/casts"
+                }
+            }
+        }        
+    }      
 }
