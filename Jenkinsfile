@@ -135,12 +135,14 @@ pipeline {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -204,12 +206,14 @@ pipeline {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -272,12 +276,14 @@ pipeline {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
@@ -367,12 +373,14 @@ pipeline {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                        sh "sleep 10"
                         sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
