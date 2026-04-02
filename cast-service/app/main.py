@@ -11,6 +11,7 @@ async def startup():
     await database.connect()
 
 # Health check endpoint for Kubernetes probes
+
 @app.get("/api/v1/checkapi")
 async def health_check():
     return {"message": "fastapi is working!"}
