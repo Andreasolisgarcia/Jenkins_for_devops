@@ -2,10 +2,6 @@ pipeline {
     agent any
     
     environment {
-        BUILD_MOVIE = 'false'
-        BUILD_CAST = 'false'
-        DEPLOY_MOVIE = 'false'
-        DEPLOY_CAST  = 'false'
         MOVIE_RELEASE = 'movie-service'
         CAST_RELEASE = 'cast-service'
     }
@@ -23,6 +19,11 @@ pipeline {
                     echo "=== CHANGED FILES ==="
                     echo changes
                     echo "=== GIT_BRANCH = ${env.GIT_BRANCH} ==="
+
+                    env.BUILD_MOVIE = 'false'
+                    env.BUILD_CAST = 'false'
+                    env.DEPLOY_MOVIE = 'false'
+                    env.DEPLOY_CAST  = 'false'
 
                     if (changes.contains('movie-service/')) {
                         env.BUILD_MOVIE = 'true'
