@@ -20,6 +20,10 @@ pipeline {
                         script: 'git diff --name-only HEAD~1 HEAD',
                         returnStdout: true
                     )
+                    echo "=== CHANGED FILES ==="
+                    echo changes
+                    echo "=== GIT_BRANCH = ${env.GIT_BRANCH} ==="
+
                     if (changes.contains('movie-service/')) {
                         env.BUILD_MOVIE = 'true'
                         env.DEPLOY_MOVIE = 'true'
@@ -35,7 +39,10 @@ pipeline {
                     if (changes.contains('helm/')) {
                         env.DEPLOY_MOVIE = 'true'
                         env.DEPLOY_CAST = 'true'
-                    }                       
+                    }
+                    
+                    echo "=== DEPLOY_MOVIE = ${env.DEPLOY_MOVIE} ==="
+                    echo "=== DEPLOY_CAST = ${env.DEPLOY_CAST} ==="                     
                 }
             }
         }
