@@ -2,10 +2,6 @@ pipeline {
     agent any
     
     environment {
-        BUILD_MOVIE = 'false'
-        BUILD_CAST = 'false'
-        DEPLOY_MOVIE = 'false'
-        DEPLOY_CAST  = 'false'
         MOVIE_RELEASE = 'movie-service'
         CAST_RELEASE = 'cast-service'
     }
@@ -20,6 +16,15 @@ pipeline {
                         script: 'git diff --name-only HEAD~1 HEAD',
                         returnStdout: true
                     )
+                    echo "=== CHANGED FILES ==="
+                    echo changes
+                    echo "=== GIT_BRANCH = ${env.GIT_BRANCH} ==="
+
+                    env.BUILD_MOVIE = 'false'
+                    env.BUILD_CAST = 'false'
+                    env.DEPLOY_MOVIE = 'false'
+                    env.DEPLOY_CAST  = 'false'
+
                     if (changes.contains('movie-service/')) {
                         env.BUILD_MOVIE = 'true'
                         env.DEPLOY_MOVIE = 'true'
@@ -32,10 +37,14 @@ pipeline {
                         env.IMAGE_CAST_NAME= 'reasg/jenkins_for_devops_cast_service'
                         env.IMAGE_CAST_TAG = "${env.IMAGE_CAST_NAME}:${env.GIT_COMMIT}"
                     }  
+                    echo "Contains helm/: ${changes.contains('helm/')}"
                     if (changes.contains('helm/')) {
                         env.DEPLOY_MOVIE = 'true'
                         env.DEPLOY_CAST = 'true'
-                    }                       
+                    }
+                    
+                    echo "=== DEPLOY_MOVIE = ${env.DEPLOY_MOVIE} ==="
+                    echo "=== DEPLOY_CAST = ${env.DEPLOY_CAST} ==="                     
                 }
             }
         }
@@ -71,10 +80,12 @@ pipeline {
         stage('Deploy dev'){
             environment {
                 NAMESPACE = 'dev'
+                MOVIE_NODEPORT = '30007'
+                CAST_NODEPORT = '30008'
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true' 
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -91,12 +102,14 @@ pipeline {
                                 sh "helm upgrade --install movie-service ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
+                                    --set service.nodePort=${MOVIE_NODEPORT} \
                                     -n ${NAMESPACE}"                        
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
                                   -f ./helm/values-cast.yaml \
                                   -f ${CAST_SECRET} \
+                                  --set service.nodePort=${CAST_NODEPORT} \
                                   -n ${NAMESPACE}"                       
                             }                    
                         } 
@@ -110,7 +123,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -121,14 +134,20 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "sleep 10"
+                        retry(2) {
+                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        sh "sleep 10"
+                        retry(2) {
+                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                 }
@@ -137,10 +156,12 @@ pipeline {
         stage('Deploy qa'){
             environment {
                 NAMESPACE = 'qa'
+                MOVIE_NODEPORT = '30009'
+                CAST_NODEPORT = '30010'
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true' 
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -157,12 +178,14 @@ pipeline {
                                 sh "helm upgrade --install movie-service ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
+                                    --set service.nodePort=${MOVIE_NODEPORT} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
                                     -f ./helm/values-cast.yaml \
                                     -f ${CAST_SECRET} \
+                                    --set service.nodePort=${CAST_NODEPORT} \
                                     -n ${NAMESPACE}"                          
                             }                    
                         } 
@@ -175,7 +198,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -186,14 +209,20 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        retry(2) {
+                            sh "sleep 10"
+                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        retry(2) {
+                            sh "sleep 10"
+                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                 }
@@ -205,7 +234,7 @@ pipeline {
             }
             when {
                 allOf {
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf {
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -227,7 +256,7 @@ pipeline {
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
-                                -f ./helm/values-cast.yaml \
+                                    -f ./helm/values-cast.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${CAST_SECRET} \
                                     -n ${NAMESPACE}"                          
@@ -243,7 +272,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -254,24 +283,29 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        retry(2) {
+                            sh "sleep 10"
+                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        retry(2) {
+                            sh "sleep 10"
+                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
-
                 }
             }
         }
         stage('Test staging Ingress (curl extern)'){
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -281,14 +315,17 @@ pipeline {
             steps {
                 script {
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
-                    sh "curl -f http://${publicIP}/api/v1/movies"
-                    sh "curl -f http://${publicIP}/api/v1/casts"
+                    retry(2) {
+                        sh "sleep 15"
+                        sh "curl -f http://${publicIP}/api/v1/movies"
+                        sh "curl -f http://${publicIP}/api/v1/casts"
+                    }
                 }
             }
         }
         stage('Sanity Check'){
             when {
-                branch 'master'
+                expression { env.GIT_BRANCH == 'origin/master' }
             }
             steps {
                 input "Does the staging environment look ok? Do you want to continue DEPLOYING to PROD?"
@@ -300,7 +337,7 @@ pipeline {
             }
             when {
                 allOf {
-                    branch 'master'
+                    expression { env.GIT_BRANCH == 'origin/master' }
                     anyOf {
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -338,7 +375,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'master'
+                    expression { env.GIT_BRANCH == 'origin/master' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -349,24 +386,29 @@ pipeline {
                 script {
                     if (env.DEPLOY_MOVIE == 'true') {
                         sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE}"
+                        retry(2) {
+                            sh "sleep 10"
+                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
                     if (env.DEPLOY_CAST == 'true') {
                         sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                        sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE}"
+                        retry(2) {
+                            sh "sleep 10"
+                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
+                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
+                        }
                         sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
                     }
-
                 }
             }
         }
         stage('Test prod Ingress (curl extern)'){
             when {
                 allOf{
-                    branch 'master'
+                    expression { env.GIT_BRANCH == 'origin/master' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -376,8 +418,11 @@ pipeline {
             steps {
                 script {
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
-                    sh "curl -f http://${publicIP}/api/v1/movies"
-                    sh "curl -f http://${publicIP}/api/v1/casts"
+                    retry(2) {
+                        sh "sleep 15"
+                        sh "curl -f http://${publicIP}/api/v1/movies"
+                        sh "curl -f http://${publicIP}/api/v1/casts"
+                    }
                 }
             }
         }        

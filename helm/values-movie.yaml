@@ -19,7 +19,7 @@ env:
 # Microservice Kubernetes Service
 service:
   name: ""
-  nodePort: 30007
+  nodePort: ""
 
 # PostgreSQL configuration
 db:
