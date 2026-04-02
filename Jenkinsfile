@@ -36,6 +36,7 @@ pipeline {
                         env.IMAGE_CAST_NAME= 'reasg/jenkins_for_devops_cast_service'
                         env.IMAGE_CAST_TAG = "${env.IMAGE_CAST_NAME}:${env.GIT_COMMIT}"
                     }  
+                    echo "Contains helm/: ${changes.contains('helm/')}"
                     if (changes.contains('helm/')) {
                         env.DEPLOY_MOVIE = 'true'
                         env.DEPLOY_CAST = 'true'
