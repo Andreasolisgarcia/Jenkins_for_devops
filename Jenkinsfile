@@ -74,7 +74,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true' 
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -110,7 +110,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -140,7 +140,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true' 
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -175,7 +175,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -205,7 +205,7 @@ pipeline {
             }
             when {
                 allOf {
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf {
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -243,7 +243,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -271,7 +271,7 @@ pipeline {
         stage('Test staging Ingress (curl extern)'){
             when {
                 allOf{
-                    branch 'dev'
+                    expression { env.GIT_BRANCH == 'origin/dev' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -288,7 +288,7 @@ pipeline {
         }
         stage('Sanity Check'){
             when {
-                branch 'master'
+                expression { env.GIT_BRANCH == 'origin/master' }
             }
             steps {
                 input "Does the staging environment look ok? Do you want to continue DEPLOYING to PROD?"
@@ -300,7 +300,7 @@ pipeline {
             }
             when {
                 allOf {
-                    branch 'master'
+                    expression { env.GIT_BRANCH == 'origin/master' }
                     anyOf {
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -338,7 +338,7 @@ pipeline {
             }
             when {
                 allOf{
-                    branch 'master'
+                    expression { env.GIT_BRANCH == 'origin/master' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
@@ -366,7 +366,7 @@ pipeline {
         stage('Test prod Ingress (curl extern)'){
             when {
                 allOf{
-                    branch 'master'
+                    expression { env.GIT_BRANCH == 'origin/master' }
                     anyOf{
                         environment name: 'DEPLOY_MOVIE', value: 'true'
                         environment name: 'DEPLOY_CAST', value: 'true'
