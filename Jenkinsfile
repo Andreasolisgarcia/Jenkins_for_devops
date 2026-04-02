@@ -303,6 +303,7 @@ pipeline {
             }
             steps {
                 script {
+                    sh "sleep 15"
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
                     sh "curl -f http://${publicIP}/api/v1/movies"
                     sh "curl -f http://${publicIP}/api/v1/casts"
@@ -400,6 +401,7 @@ pipeline {
             }
             steps {
                 script {
+                    sh "sleep 15"
                     def publicIP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
                     sh "curl -f http://${publicIP}/api/v1/movies"
                     sh "curl -f http://${publicIP}/api/v1/casts"
