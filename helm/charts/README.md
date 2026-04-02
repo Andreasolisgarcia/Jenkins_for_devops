@@ -22,3 +22,6 @@ preparation jenkins
 docker credentials
 k3s
 cat /etc/rancher/k3s/k3s.yaml
+
+
+test
