@@ -1,3 +1,15 @@
+def helmTest(String release, String namespace) {
+    sh "kubectl wait deployment/${release}-fastapiapp \
+          --for=condition=Available \
+          --timeout=120s \
+          -n ${namespace}"
+    retry(2) {
+        sh "kubectl delete pod ${release}-fastapiapp-test-connection -n ${namespace} --ignore-not-found"
+        sh "helm test ${release} --logs -n ${namespace} --timeout 60s"
+    }
+    sh "kubectl delete pod ${release}-fastapiapp-test-connection -n ${namespace} --ignore-not-found"
+}
+
 pipeline {
     agent any
     
@@ -99,14 +111,14 @@ pipeline {
                     ]){
                         script{
                             if (env.DEPLOY_MOVIE == 'true'){
-                                sh "helm upgrade --install movie-service ./helm/charts \
+                                sh "helm upgrade --install ${MOVIE_RELEASE} ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
                                     --set service.nodePort=${MOVIE_NODEPORT} \
                                     -n ${NAMESPACE}"                        
                             }
                             if (env.DEPLOY_CAST == 'true'){
-                                sh "helm upgrade --install cast-service ./helm/charts \
+                                sh "helm upgrade --install ${CAST_RELEASE} ./helm/charts \
                                   -f ./helm/values-cast.yaml \
                                   -f ${CAST_SECRET} \
                                   --set service.nodePort=${CAST_NODEPORT} \
@@ -132,24 +144,8 @@ pipeline {
             }
             steps {
                 script {
-                    if (env.DEPLOY_MOVIE == 'true') {
-                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
-                        retry(2) {
-                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
-                    if (env.DEPLOY_CAST == 'true') {
-                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        sh "sleep 10"
-                        retry(2) {
-                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
+                    if (env.DEPLOY_MOVIE == 'true') helmTest(MOVIE_RELEASE, NAMESPACE)
+                    if (env.DEPLOY_CAST == 'true') helmTest(CAST_RELEASE, NAMESPACE)
                 }
             }
         }
@@ -175,14 +171,14 @@ pipeline {
                     ]){
                         script{
                             if (env.DEPLOY_MOVIE == 'true'){
-                                sh "helm upgrade --install movie-service ./helm/charts \
+                                sh "helm upgrade --install ${MOVIE_RELEASE} ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
                                     --set service.nodePort=${MOVIE_NODEPORT} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
-                                sh "helm upgrade --install cast-service ./helm/charts \
+                                sh "helm upgrade --install ${CAST_RELEASE} ./helm/charts \
                                     -f ./helm/values-cast.yaml \
                                     -f ${CAST_SECRET} \
                                     --set service.nodePort=${CAST_NODEPORT} \
@@ -207,24 +203,8 @@ pipeline {
             }
             steps {
                 script {
-                    if (env.DEPLOY_MOVIE == 'true') {
-                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        retry(2) {
-                            sh "sleep 10"
-                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
-                    if (env.DEPLOY_CAST == 'true') {
-                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        retry(2) {
-                            sh "sleep 10"
-                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
+                    if (env.DEPLOY_MOVIE == 'true') helmTest(MOVIE_RELEASE, NAMESPACE)
+                    if (env.DEPLOY_CAST == 'true') helmTest(CAST_RELEASE, NAMESPACE)
                 }
             }
         }
@@ -248,14 +228,14 @@ pipeline {
                     ]){
                         script{
                             if (env.DEPLOY_MOVIE == 'true'){
-                                sh "helm upgrade --install movie-service ./helm/charts \
+                                sh "helm upgrade --install ${MOVIE_RELEASE} ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${MOVIE_SECRET} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
-                                sh "helm upgrade --install cast-service ./helm/charts \
+                                sh "helm upgrade --install ${CAST_RELEASE} ./helm/charts \
                                     -f ./helm/values-cast.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${CAST_SECRET} \
@@ -281,24 +261,8 @@ pipeline {
             }
             steps {
                 script {
-                    if (env.DEPLOY_MOVIE == 'true') {
-                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        retry(2) {
-                            sh "sleep 10"
-                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
-                    if (env.DEPLOY_CAST == 'true') {
-                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        retry(2) {
-                            sh "sleep 10"
-                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
+                    if (env.DEPLOY_MOVIE == 'true') helmTest(MOVIE_RELEASE, NAMESPACE)
+                    if (env.DEPLOY_CAST == 'true') helmTest(CAST_RELEASE, NAMESPACE)
                 }
             }
         }
@@ -351,14 +315,14 @@ pipeline {
                     ]){
                         script{
                             if (env.DEPLOY_MOVIE == 'true'){
-                                sh "helm upgrade --install movie-service ./helm/charts \
+                                sh "helm upgrade --install ${MOVIE_RELEASE} ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${MOVIE_SECRET} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
-                                sh "helm upgrade --install cast-service ./helm/charts \
+                                sh "helm upgrade --install ${CAST_RELEASE} ./helm/charts \
                                 -f ./helm/values-cast.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${CAST_SECRET} \
@@ -384,24 +348,8 @@ pipeline {
             }
             steps {
                 script {
-                    if (env.DEPLOY_MOVIE == 'true') {
-                        sh "kubectl rollout status deployment/${MOVIE_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        retry(2) {
-                            sh "sleep 10"
-                            sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${MOVIE_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${MOVIE_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
-                    if (env.DEPLOY_CAST == 'true') {
-                        sh "kubectl rollout status deployment/${CAST_RELEASE}-fastapiapp -n ${NAMESPACE}"
-                        retry(2) {
-                            sh "sleep 10"
-                            sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                            sh "helm test ${CAST_RELEASE} --logs -n ${NAMESPACE} --timeout 60s"
-                        }
-                        sh "kubectl delete pod ${CAST_RELEASE}-fastapiapp-test-connection -n ${NAMESPACE} --ignore-not-found"
-                    }
+                    if (env.DEPLOY_MOVIE == 'true') helmTest(MOVIE_RELEASE, NAMESPACE)
+                    if (env.DEPLOY_CAST == 'true') helmTest(CAST_RELEASE, NAMESPACE)
                 }
             }
         }
