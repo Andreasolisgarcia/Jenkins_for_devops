@@ -80,6 +80,8 @@ pipeline {
         stage('Deploy dev'){
             environment {
                 NAMESPACE = 'dev'
+                MOVIE_NODEPORT = '30007'
+                CAST_NODEPORT = '30008'
             }
             when {
                 allOf{
@@ -100,12 +102,14 @@ pipeline {
                                 sh "helm upgrade --install movie-service ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
+                                    --set service.nodePort=${MOVIE_NODEPORT} \
                                     -n ${NAMESPACE}"                        
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
                                   -f ./helm/values-cast.yaml \
                                   -f ${CAST_SECRET} \
+                                  --set service.nodePort=${CAST_NODEPORT} \
                                   -n ${NAMESPACE}"                       
                             }                    
                         } 
@@ -146,6 +150,8 @@ pipeline {
         stage('Deploy qa'){
             environment {
                 NAMESPACE = 'qa'
+                MOVIE_NODEPORT = '30009'
+                CAST_NODEPORT = '30010'
             }
             when {
                 allOf{
@@ -166,12 +172,14 @@ pipeline {
                                 sh "helm upgrade --install movie-service ./helm/charts \
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
+                                    --set service.nodePort=${MOVIE_NODEPORT} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
                                     -f ./helm/values-cast.yaml \
                                     -f ${CAST_SECRET} \
+                                    --set service.nodePort=${CAST_NODEPORT} \
                                     -n ${NAMESPACE}"                          
                             }                    
                         } 
@@ -236,7 +244,7 @@ pipeline {
                             }
                             if (env.DEPLOY_CAST == 'true'){
                                 sh "helm upgrade --install cast-service ./helm/charts \
-                                -f ./helm/values-cast.yaml \
+                                    -f ./helm/values-cast.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${CAST_SECRET} \
                                     -n ${NAMESPACE}"                          
