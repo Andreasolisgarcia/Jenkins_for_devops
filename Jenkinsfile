@@ -28,26 +28,29 @@ pipeline {
                         script: 'git diff --name-only HEAD~1 HEAD',
                         returnStdout: true
                     )
-                    echo "=== CHANGED FILES ==="
+                    echo "******** CHANGED FILES *********"
                     echo changes
-                    echo "=== GIT_BRANCH = ${env.GIT_BRANCH} ==="
+                    echo "******** GIT_BRANCH = ${env.GIT_BRANCH} ********"
 
                     env.BUILD_MOVIE = 'false'
                     env.BUILD_CAST = 'false'
                     env.DEPLOY_MOVIE = 'false'
                     env.DEPLOY_CAST  = 'false'
+                    env.SET_DEPLOY_TAG = ""
+                    env.IMAGE_TAG= "${env.GIT_COMMIT}"
 
                     if (changes.contains('movie-service/')) {
+                        env.IMAGE_MOVIE_NAME= 'reasg/jenkins_for_devops_movie_service'
                         env.BUILD_MOVIE = 'true'
                         env.DEPLOY_MOVIE = 'true'
-                        env.IMAGE_MOVIE_NAME= 'reasg/jenkins_for_devops_movie_service'
-                        env.IMAGE_MOVIE_TAG= "${env.IMAGE_MOVIE_NAME}:${env.GIT_COMMIT}"
+                        env.SET_DEPLOY_TAG = "--set image.tag=${env.IMAGE_TAG}"
+                        
                     }
                     if (changes.contains('cast-service/')) {
+                        env.IMAGE_CAST_NAME= 'reasg/jenkins_for_devops_cast_service'
                         env.BUILD_CAST = 'true'
                         env.DEPLOY_CAST = 'true' 
-                        env.IMAGE_CAST_NAME= 'reasg/jenkins_for_devops_cast_service'
-                        env.IMAGE_CAST_TAG = "${env.IMAGE_CAST_NAME}:${env.GIT_COMMIT}"
+                        env.SET_DEPLOY_TAG = "--set image.tag=${env.IMAGE_TAG}"
                     }  
                     echo "Contains helm/: ${changes.contains('helm/')}"
                     if (changes.contains('helm/')) {
@@ -77,12 +80,12 @@ pipeline {
                     echo 'Loging succesfully'
                     script{
                         if ( env.BUILD_MOVIE == 'true' ) {
-                            sh "docker build -t ${env.IMAGE_MOVIE_TAG} ./movie-service"
-                            sh "docker push ${env.IMAGE_MOVIE_TAG}"
+                            sh "docker build -t ${env.IMAGE_MOVIE_NAME}:${env.IMAGE_TAG} ./movie-service"
+                            sh "docker push ${env.IMAGE_MOVIE_NAME}:${env.IMAGE_TAG}"
                         }
                         if ( env.BUILD_CAST == 'true' ) {
-                            sh "docker build -t ${env.IMAGE_CAST_TAG} ./cast-service"
-                            sh "docker push ${env.IMAGE_CAST_TAG}"
+                            sh "docker build -t ${env.IMAGE_CAST_NAME}:${env.IMAGE_TAG} ./cast-service"
+                            sh "docker push ${env.IMAGE_CAST_NAME}:${env.IMAGE_TAG}"
                         }  
                     }
                   
@@ -115,6 +118,7 @@ pipeline {
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
                                     --set service.nodePort=${MOVIE_NODEPORT} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                        
                             }
                             if (env.DEPLOY_CAST == 'true'){
@@ -122,6 +126,7 @@ pipeline {
                                   -f ./helm/values-cast.yaml \
                                   -f ${CAST_SECRET} \
                                   --set service.nodePort=${CAST_NODEPORT} \
+                                  ${env.SET_DEPLOY_TAG} \
                                   -n ${NAMESPACE}"                       
                             }                    
                         } 
@@ -175,6 +180,7 @@ pipeline {
                                     -f ./helm/values-movie.yaml \
                                     -f ${MOVIE_SECRET} \
                                     --set service.nodePort=${MOVIE_NODEPORT} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
@@ -182,6 +188,7 @@ pipeline {
                                     -f ./helm/values-cast.yaml \
                                     -f ${CAST_SECRET} \
                                     --set service.nodePort=${CAST_NODEPORT} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                          
                             }                    
                         } 
@@ -232,6 +239,7 @@ pipeline {
                                     -f ./helm/values-movie.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${MOVIE_SECRET} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
@@ -239,6 +247,7 @@ pipeline {
                                     -f ./helm/values-cast.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${CAST_SECRET} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                          
                             } 
                             sh "kubectl apply -f ./kubernetes/ingress.yaml -n ${NAMESPACE}"                   
@@ -319,6 +328,7 @@ pipeline {
                                     -f ./helm/values-movie.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${MOVIE_SECRET} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                            
                             }
                             if (env.DEPLOY_CAST == 'true'){
@@ -326,6 +336,7 @@ pipeline {
                                 -f ./helm/values-cast.yaml \
                                     -f ./helm/values-staging-prod.yaml \
                                     -f ${CAST_SECRET} \
+                                    ${env.SET_DEPLOY_TAG} \
                                     -n ${NAMESPACE}"                          
                             } 
                             sh "kubectl apply -f ./kubernetes/ingress.yaml -n ${NAMESPACE}"                   
