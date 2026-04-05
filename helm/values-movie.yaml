@@ -14,7 +14,7 @@ env:
   containerPort: 8000
   # Must match service.name in values-cast.yaml
   # Run 'kubectl get svc -n dev' to verify the exact service name
-  castServiceName: "cast-service-svc"
+  castServiceName: "cast-service-fastapiapp"
 
 # Microservice Kubernetes Service
 service:

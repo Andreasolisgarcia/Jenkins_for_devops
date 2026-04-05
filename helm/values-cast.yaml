@@ -17,7 +17,7 @@ env:
 # Microservice Kubernetes Service
 service:
   # this name must match castServiceName in values-movie.yaml
-  name: "cast-service-svc"   
+  name: "cast-service-fastapiapp"   
   nodePort: ""
 
 db:
