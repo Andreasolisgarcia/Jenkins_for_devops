@@ -308,9 +308,12 @@ pipeline {
         }
         stage('Saving Tags') {
             when {
-                anyOf{
-                    environment name: 'BUILD_MOVIE', value: 'true'
-                    environment name: 'BUILD_CAST', value: 'true'
+                allOf{
+                    expression { env.GIT_BRANCH == 'origin/dev' }
+                    anyOf{
+                        environment name: 'BUILD_MOVIE', value: 'true'
+                        environment name: 'BUILD_CAST', value: 'true'
+                    }
                 }
             }
             steps{
@@ -321,7 +324,7 @@ pipeline {
                     if (env.BUILD_CAST == 'true') {
                         sh "echo ${env.BUILD_TAG} > ./tags/.cast-image-tag"
                     }
-                }
+                def branch = env.GIT_BRANCH.replace('origin/', '')
                 withCredentials([usernamePassword(
                     credentialsId: 'GITHUB_CREDS',
                     usernameVariable: 'GIT_USER',
@@ -332,9 +335,10 @@ pipeline {
                         git config user.name "Jenkins"
                         git add ./tags/
                         git commit -m "ci: update image tags [skip ci]"
-                        git push https://${GIT_USER}:${GIT_TOKEN}@github.com/reasg/Jenkins_for_devops.git
+                        git push https://\${GIT_USER}:\${GIT_TOKEN}@github.com/\${GIT_USER}/Jenkins_for_devops.git HEAD:${branch}
                      """
                     }
+                }
             }
         }
         stage('Sanity Check'){
