@@ -214,3 +214,6 @@ Images disponibles sur : https://hub.docker.com/repositories/reasg
 |---|---|
 | reasg/jenkins_for_devops_movie_service | latest |
 | reasg/jenkins_for_devops_cast_service | latest |
+
+# important ! to keep jenkins updated un Vm IP
+sudo vim /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml
