@@ -1,36 +1,34 @@
-# Jenkins — Préparation avant le pipeline
-> À faire **une seule fois** au début du projet
+# Jenkins Setup Guide
+> One-time setup before running the pipeline
 
 ---
 
-## 0. Prérequis — Outils installés sur la VM
-
-Vérifier que tout est dispo dans le PATH :
+## 0. Verify tools are available on the VM
 
 ```bash
-which docker
-which helm
-which kubectl
+which docker    # → /usr/bin/docker
+which helm      # → /usr/local/bin/helm
+which kubectl   # → /usr/local/bin/kubectl
 ```
 
-Chaque commande doit retourner un chemin (ex: `/usr/bin/docker`).
+All three must return a path, otherwise the pipeline stages will fail.
 
 ---
 
-## 1. Donner les droits Docker à Jenkins
+## 1. Give Jenkins access to Docker
 
-Jenkins doit pouvoir lancer des commandes Docker :
+Jenkins runs as its own user and can't use Docker by default:
 
 ```bash
 sudo usermod -aG docker jenkins
 sudo systemctl restart jenkins
 ```
 
-> Sans ça, le stage Build échoue avec `permission denied`.
+> Without this, the Build & Push stage fails with `permission denied on /var/run/docker.sock`.
 
 ---
 
-## 2. Créer les namespaces Kubernetes
+## 2. Create Kubernetes namespaces
 
 ```bash
 kubectl create namespace dev
@@ -41,83 +39,84 @@ kubectl create namespace prod
 
 ---
 
-## 3. Credentials à créer dans Jenkins
+## 3. Create Jenkins credentials
 
 `Jenkins → Manage Jenkins → Credentials → Global → Add Credential`
 
-| ID | Type | Contenu | Utilisé pour |
+| Credential ID | Type | Content | Used in |
 |---|---|---|---|
-| `dockerhub` | Username/Password | Login Docker Hub | Push des images |
-| `kubeconfig` | Secret file | `/etc/rancher/k3s/k3s.yaml` | Helm → K3s |
-| `values-movie-secret` | Secret file | `values-movie-secret.yaml` | Password PostgreSQL movie |
-| `values-cast-secret` | Secret file | `values-cast-secret.yaml` | Password PostgreSQL cast |
+| `dockerhub` | Username/Password | Docker Hub login | Build & Push stage |
+| `kubeconfig` | Secret file | `/etc/rancher/k3s/k3s.yaml` | All Helm deploy stages |
+| `values-movie-secret` | Secret file | `values-movie-secret.yaml` | Deploy stages (movie) |
+| `values-cast-secret` | Secret file | `values-cast-secret.yaml` | Deploy stages (cast) |
+| `GITHUB_CREDS` | Username/Password | GitHub login + token | Saving Tags stage |
 
-### Récupérer le kubeconfig
+### Get the kubeconfig file
 
 ```bash
 cat /etc/rancher/k3s/k3s.yaml
 ```
-Copier le contenu → uploader comme Secret file dans Jenkins.
 
-### Structure des fichiers secret
+Copy the content → upload as a Secret file in Jenkins.
+
+### Secret values file structure
 
 ```yaml
-# values-movie-secret.yaml
+# values-movie-secret.yaml  ← never commit this file
 secret:
-  POSTGRES_PASSWORD: tonmotdepasse
+  POSTGRES_PASSWORD: yourpassword
 ```
 
 ```yaml
-# values-cast-secret.yaml
+# values-cast-secret.yaml  ← never commit this file
 secret:
-  POSTGRES_PASSWORD: tonmotdepasse
+  POSTGRES_PASSWORD: yourpassword
 ```
 
-> Ces fichiers sont dans `.gitignore` — ne jamais les commiter sur GitHub.
+These files are listed in `.gitignore`.
 
 ---
 
-## 4. Configurer le pipeline Jenkins
+## 4. Configure the Jenkins pipeline
 
-`Jenkins → New Item → Pipeline → nom : fastapi`
+`Jenkins → New Item → Pipeline → name: fastapi-pipeline`
 
-### Paramètres SCM
-
-| Champ | Valeur |
+| Field | Value |
 |---|---|
 | Definition | Pipeline script from SCM |
 | SCM | Git |
-| Repository URL | URL de ton repo GitHub |
-| Branch | `*/dev` et `*/master` |
+| Repository URL | your GitHub repo URL |
+| Branches | `*/dev` and `*/master` |
 | Script Path | `Jenkinsfile` |
 
-### Trigger
-
-Activer **GitHub hook trigger for GITScm polling**
+Enable: **GitHub hook trigger for GITScm polling**
 
 ---
 
-## 5. Configurer le webhook GitHub
+## 5. Configure the GitHub webhook
 
 `GitHub → repo → Settings → Webhooks → Add webhook`
 
-| Champ | Valeur |
+| Field | Value |
 |---|---|
-| Payload URL | `http://<IP-EC2>:8080/github-webhook/` |
+| Payload URL | `http://<EC2-PUBLIC-IP>:8080/github-webhook/` |
 | Content type | `application/json` |
-| Events | `Just the push event` |
+| Events | Just the push event |
+
+> If the EC2 IP changes (instance restart), update it here **and** in Jenkins:  
+> `sudo vim /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml`
 
 ---
 
-## Récapitulatif
+## Checklist
 
 ```
-✅ Docker, Helm, kubectl accessibles
-✅ Jenkins dans le groupe docker
-✅ 4 namespaces créés (dev, qa, staging, prod)
-✅ 4 credentials créés dans Jenkins
-✅ Pipeline configuré (SCM → GitHub)
-✅ Webhook GitHub configuré
+✅ Docker, Helm, kubectl accessible in PATH
+✅ Jenkins added to docker group + restarted
+✅ 4 namespaces created (dev, qa, staging, prod)
+✅ 5 credentials created in Jenkins
+✅ Pipeline configured (SCM → GitHub)
+✅ GitHub webhook configured
 ```
 
-**Après ça → écrire le Jenkinsfile.**
+

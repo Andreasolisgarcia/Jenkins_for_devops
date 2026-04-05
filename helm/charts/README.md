@@ -1,25 +1,162 @@
 # fastapiapp Helm Chart
 
-Generic Helm chart for FastAPI microservices with PostgreSQL.
+Generic, reusable Helm chart for deploying a FastAPI microservice with a dedicated PostgreSQL database on Kubernetes.
+
+This chart is used **twice** in this project — once per microservice (`movie-service`, `cast-service`) — with environment-specific configuration injected via separate `values-*.yaml` files.
+
+---
+
+## What this chart deploys
+
+```
+Helm release (e.g. "movie-service")
+├── Deployment          → FastAPI app pods
+├── Service             → NodePort (dev/qa) or ClusterIP (staging/prod)
+├── StatefulSet         → PostgreSQL database
+├── Service (DB)        → Internal ClusterIP for DB access
+├── ConfigMap           → Non-sensitive DB config (user, db name)
+├── Secret              → PostgreSQL password (base64 encoded)
+└── ServiceAccount      → (disabled by default)
+```
+
+The FastAPI app connects to its database via:
+```
+postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@<release>-db-svc/<POSTGRES_DB>
+```
+
+The DB service name is derived from the Helm release name — so two releases never share the same database.
+
+---
 
 ## Usage
 
-helm install <release-name> ./charts \
-  -f ./values-<service>.yaml \
-  -f ./values-secret.yaml \
+```bash
+# Install
+helm install <release-name> ./helm/charts \
+  -f ./helm/values-<service>.yaml \
+  -f ./helm/values-<service>-secret.yaml \
   -n <namespace>
+
+# Upgrade (or install if not exists)
+helm upgrade --install <release-name> ./helm/charts \
+  -f ./helm/values-<service>.yaml \
+  -f ./helm/values-<service>-secret.yaml \
+  -n <namespace>
+
+# Dry-run: render templates without deploying
+helm template <release-name> ./helm/charts \
+  -f ./helm/values-<service>.yaml \
+  -f ./helm/values-<service>-secret.yaml
+
+# Run connectivity tests
+helm test <release-name> -n <namespace> --logs
+```
+
+---
+
+## Values reference
+
+### Image
+
+| Key | Description | Default |
+|---|---|---|
+| `image.repository` | Docker image repository | `""` |
+| `image.tag` | Image tag — overridden by Jenkins with Git SHA | `Chart.AppVersion` |
+| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
+
+### Application
+
+| Key | Description | Default |
+|---|---|---|
+| `replicaCount` | Number of FastAPI pods | `3` |
+| `env.containerPort` | Port the FastAPI app listens on | `8000` |
+| `env.castServiceName` | Service name of cast-service (movie-service only) | `""` |
+
+### Service
+
+| Key | Description | Default |
+|---|---|---|
+| `service.name` | Override service name (leave empty to use Helm fullname) | `""` |
+| `service.type` | `NodePort` or `ClusterIP` | `NodePort` |
+| `service.port` | Service port (exposed internally) | `80` |
+| `service.targetPort` | Port on the container | `8000` |
+| `service.nodePort` | NodePort number (dev/qa only) | `""` |
+
+### Database (PostgreSQL)
+
+| Key | Description | Default |
+|---|---|---|
+| `db.image` | PostgreSQL Docker image | `postgres:12.1-alpine` |
+| `db.mountPath` | Data volume mount path | `/var/lib/postgresql/data/` |
+| `db.storage` | PVC storage size | `1G` |
+| `configMap.POSTGRES_DB` | Database name | `""` |
+| `configMap.POSTGRES_USER` | Database user | `""` |
+| `secret.POSTGRES_PASSWORD` | Database password — **never commit** | `""` |
+
+### Autoscaling
+
+| Key | Description | Default |
+|---|---|---|
+| `autoscaling.enabled` | Enable HorizontalPodAutoscaler | `false` |
+| `autoscaling.minReplicas` | Minimum replicas | `1` |
+| `autoscaling.maxReplicas` | Maximum replicas | `100` |
+| `autoscaling.targetCPUUtilizationPercentage` | CPU threshold | `80` |
+
+---
+
+## Values files structure
+
+This chart uses **layered values files** — each file overrides the previous one:
+
+```
+values.yaml                  ← chart defaults (committed)
+  └── values-movie.yaml      ← movie-service config (committed)
+        └── values-movie-secret.yaml  ← passwords only (gitignored)
+```
+
+For staging and production, an additional override sets `service.type: ClusterIP`:
+
+```
+values.yaml
+  └── values-cast.yaml
+        └── values-staging-prod.yaml   ← ClusterIP override
+              └── values-cast-secret.yaml
+```
+
+---
 
 ## Secret management
 
-Secrets are never committed to Git.
-See values-secret.yaml (gitignored) or pass via CLI:
+Passwords are **never stored in the repository**. They are passed at deploy time:
 
-  --set secret.POSTGRES_PASSWORD=yourpassword
+```yaml
+# values-movie-secret.yaml  ← gitignored
+secret:
+  POSTGRES_PASSWORD: yourpassword
+```
 
-In production: use AWS Secrets Manager or HashiCorp Vault.
+In the CI/CD pipeline, these files are injected by Jenkins as `Secret file` credentials.
 
-preparation jenkins
-docker credentials
-k3s
-cat /etc/rancher/k3s/k3s.yaml
-test
+> For production hardening: use AWS Secrets Manager, HashiCorp Vault, or Kubernetes External Secrets Operator instead of file-based secrets.
+
+---
+
+## Naming conventions
+
+Resource names are generated by the `fastapiapp.fullname` helper in `_helpers.tpl`:
+
+| Helm release | Generated name |
+|---|---|
+| `movie-service` | `movie-service-fastapiapp` |
+| `cast-service` | `cast-service-fastapiapp` |
+
+The DB StatefulSet and its service follow the same pattern:
+
+| Resource | Name |
+|---|---|
+| StatefulSet | `movie-service-fastapiapp-db` |
+| DB Service | `movie-service-db-svc` |
+| ConfigMap | `movie-service-db-configmap` |
+| Secret | `movie-service-db-secret` |
+
+This naming is critical — the `castServiceName` value in `values-movie.yaml` must match the `service.name` in `values-cast.yaml` exactly for inter-service communication to work.
